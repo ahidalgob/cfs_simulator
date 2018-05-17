@@ -1,19 +1,15 @@
-#ifndef TASK
-#define TASK
+#ifndef TASK_H
+#define TASK_H
 
 using namespace std;
 
 class TASK
 {
-public:
-	TASK();
-	~TASK();
-
-private:
-	long long v_runtime;
-	int nice;
-	int io_prob;
+	public:
+		TASK();
+		long long v_runtime;
+		int nice;
+		int io_prob;
 };
-
 
 #endif

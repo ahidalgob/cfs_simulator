@@ -1,7 +1,7 @@
-#ifndef WAITQUEUE
-#define WAITQUEUE
+#ifndef WAITQUEUE_H
+#define WAITQUEUE_H
 
-#include <queue.h>
+#include <queue>
 #include <pthread.h>
 
 #include "task.h"
@@ -10,17 +10,14 @@ using namespace std;
 
 class WAITQUEUE
 {
-public:
-	WAITQUEUE();
-	~WAITQUEUE();
-	void push(&TASK);
-	TASK pop();
-
-private:
-	queue <TASK> ;
-	int prob;
+	queue <TASK> idle_queue;
+	int idle_prob;
 	pthread_mutex_t idle_mutex;
+	
+	public:
+		WAITQUEUE();
+		void push(TASK&);
+		TASK pop();
 };
-
 
 #endif
