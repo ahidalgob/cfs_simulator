@@ -18,6 +18,7 @@ class WAITQUEUE
 		WAITQUEUE();
 		void push(TASK&);
 		TASK pop();
+		TASK front();
 };
 
 #endif
