@@ -1,10 +1,16 @@
 #include "task.h"
-#include <iostream>
+#include "CPU.h"
+#include "waitqueue.h"
+#include <stdio.h>
 
 using namespace std;
 
 int main()
 {
-	TASK hola;
+	TASK task;
+    printf("%d\n", task.nice);
+
+    CPU cpu;
+
 	return 0;
 }

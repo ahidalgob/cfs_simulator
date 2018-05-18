@@ -1,9 +1,9 @@
 #include <stdlib.h>
-#include <time.h> 
+#include <time.h>
 
 #include "task.h"
 
-using namespace std;
+//using namespace std;
 
 TASK::TASK() {
 	srand (time(NULL));

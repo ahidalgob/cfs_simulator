@@ -1,5 +1,5 @@
 #############################################
-## makefile para crear el ejecutable 'tls' ##
+## makefile para crear el ejecutable 	   ##
 #############################################
 
 # Definicion del compilador
@@ -17,8 +17,11 @@ task.o: task.cpp task.h
 waitqueue.o: waitqueue.cpp waitqueue.h
 	$(CC) $(CFLAGS) -c waitqueue.cpp -o waitqueue.o
 
+CPU.o: CPU.cpp CPU.h
+	$(CC) $(CFLAGS) -c CPU.cpp -o CPU.o
+
 # Crear el ejecutable 'main'
-main: task.o waitqueue.o
+main: task.o waitqueue.o CPU.o
 	$(CC) $(CFLAGS) *.o main.cpp -o main
 
 # Eliminar todos los .o

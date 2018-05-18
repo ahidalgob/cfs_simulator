@@ -1,7 +1,7 @@
 #include <queue>
 #include <pthread.h>
 #include <stdlib.h>
-#include <time.h> 
+#include <time.h>
 
 #include "waitqueue.h"
 #include "task.h"
@@ -20,14 +20,14 @@ void WAITQUEUE::push(TASK &task){
 	pthread_mutex_unlock(&idle_mutex);
 	return;
 }
-
+/*
 TASK WAITQUEUE::front(){
 	TASK task;
 	pthread_mutex_lock(&idle_mutex);
 	task = idle_queue.front();
 	pthread_mutex_unlock(&idle_mutex);
 	return task;
-}
+}*/
 
 TASK WAITQUEUE::pop(){
 	TASK task;

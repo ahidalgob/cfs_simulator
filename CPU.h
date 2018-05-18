@@ -1,13 +1,13 @@
-#ifndef CPU
-#define CPU
+#ifndef CPU_H
+#define CPU_H
 
-#include <queue.h>
-#include <vector.h>
+#include <queue>
+#include <vector>
 #include <pthread.h>
 #include <semaphore.h>
 
 #include "task.h"
-#include "rbtree.h"
+// #include "rbtree.h" TODO
 #include "waitqueue.h"
 
 using namespace std;
@@ -16,23 +16,26 @@ class CPU
 {
 public:
 	CPU();
-	~CPU();
+	//~CPU();
 
 private:
-	RBTREE rbtree;
-	TASK running;
-	queue <TASK> rbt_queue;
-	vector <WAITQUEUE> idle_queue;
+	// RBTREE rbtree; TODO
 	pthread_mutex_t rbt_mutex;
+
+    TASK running;
+	vector <WAITQUEUE> idle_queue;
+
+    queue <TASK> rbt_queue;
 	sem_t rbt_queue_sem;
+    pthread_mutex_t rbt_queue_mutex;
 
 	// THREAD FUNCTIONS
-	void* tick_fair(void*);
-	void* tick_idle(void*);
-	void* pusher(void*);
+	static void* tick_fair(void*);
+	static void* tick_idle(void*);
+	static void* pusher(void*);
 
 	// PUSHER
-	void rbt_queue_push(&TASK);
+	void rbt_queue_push(TASK&);
 	TASK rbt_queue_pop();
 };
 
