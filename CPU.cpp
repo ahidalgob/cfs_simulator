@@ -3,7 +3,10 @@
 
 #include <unistd.h>
 
-CPU::CPU(){
+#define time_delta 5000000
+
+CPU::CPU()
+{
     //rbtree.init() ?
     pthread_mutex_init(&rbt_mutex, NULL);
 
@@ -30,17 +33,42 @@ CPU::CPU(){
 }
 
 
-void* CPU::tick_fair(void* arg){
+void* CPU::tick_fair(void* arg)
+{
     CPU *cpu = (CPU*) arg;
-    while(true){
-        usleep(500000);
+    int goto_io;
 
+    while(true)
+    {
+        usleep(time_delta);
+ 		/*goto_io = random()%100;
+
+		if (goto_io > this.runnig.ioprob)
+		{
+			waitqueue.push(runnig);
+       		pthread_mutex_lock(&this.rbt_mutex);   
+			runnig = cfs_rq->rb_left;
+		    pthread_mutex_unlock(&this.rbt_mutex);  
+  		}
+		
+		pthread_mutex_lock(&this.rbt_mutex); 
+
+		if (this.running.vruntime > cfs_rq->rb_left.min_vruntime)
+		{
+			this.rbt_queue_push(this.running);
+    		sem_post(&rbt_queue_sem); 
+    		runnig = cfs_rq->rb_left;
+			pthread_mutex_unlock(&this.rbt_mutex);  
+ 		}
+ 		else
+ 			this.running.vruntime += time_delta;*/
 
     }
     return(NULL);
 }
 
-void* CPU::tick_idle(void* arg){
+void* CPU::tick_idle(void* arg)
+{
     CPU *cpu = (CPU*) arg;
     while(true){
         usleep(500000);
