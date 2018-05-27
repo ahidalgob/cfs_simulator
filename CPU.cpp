@@ -1,5 +1,6 @@
 #include "CPU.h"
 #include "waitqueue.h"
+#include <stdlib.h>
 
 #include <unistd.h>
 
@@ -7,8 +8,7 @@
 
 CPU::CPU()
 {
-    //rbtree.init() ?
-    pthread_mutex_init(&rbt_mutex, NULL);
+    cfs_rq.init();
 
     idle_queue.resize(WAITQUEUE_N);
 
@@ -36,32 +36,31 @@ CPU::CPU()
 void* CPU::tick_fair(void* arg)
 {
     CPU *cpu = (CPU*) arg;
-    int goto_io;
 
     while(true)
     {
         usleep(time_delta);
- 		/*goto_io = random()%100;
+ 		int goto_io = rand()%100;
 
-		if (goto_io > this.runnig.ioprob)
+		if (goto_io <= cpu->running.io_prob)
 		{
-			waitqueue.push(runnig);
-       		pthread_mutex_lock(&this.rbt_mutex);   
-			runnig = cfs_rq->rb_left;
-		    pthread_mutex_unlock(&this.rbt_mutex);  
+			cpu->idle_queue[rand()%WAITQUEUE_N].push(cpu->running);
+            cpu->cfs_rq.lock();
+			cpu->running = cpu->cfs_rq.get_min();
+            cpu->cfs_rq.remove_min();
+            cpu->cfs_rq.unlock();
+
   		}
-		
-		pthread_mutex_lock(&this.rbt_mutex); 
 
-		if (this.running.vruntime > cfs_rq->rb_left.min_vruntime)
+ 		cpu->running.v_runtime += time_delta;
+        cpu->cfs_rq.lock();
+		if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime())
 		{
-			this.rbt_queue_push(this.running);
-    		sem_post(&rbt_queue_sem); 
-    		runnig = cfs_rq->rb_left;
-			pthread_mutex_unlock(&this.rbt_mutex);  
+			cpu->rbt_queue_push(cpu->running);
+    		sem_post(&(cpu->rbt_queue_sem));
+    		cpu->running = cpu->cfs_rq->rb_get_min();
  		}
- 		else
- 			this.running.vruntime += time_delta;*/
+        cpu->cfs_rq.unlock();
 
     }
     return(NULL);
@@ -85,9 +84,9 @@ void* CPU::pusher(void* arg){
 
         TASK task = cpu->rbt_queue_pop();
 
-        pthread_mutex_lock(&cpu->rbt_mutex);
-        //cpu->rbtree.insert(task);
-        pthread_mutex_unlock(&cpu->rbt_mutex);
+        cpu->cfs_rq.lock();
+        cpu->cfs_rq.insert(task);
+        cpu->cfs_rq.unlock();
 
     }
     return(NULL);
@@ -100,12 +99,12 @@ void CPU::rbt_queue_push(TASK &task){
     pthread_mutex_unlock(&rbt_queue_mutex);
 }
 
-// can be called only when rbt_queue.size()>0
 TASK CPU::rbt_queue_pop(){
     pthread_mutex_lock(&rbt_queue_mutex);
     TASK task = rbt_queue.front();
     rbt_queue.pop();
     pthread_mutex_unlock(&rbt_queue_mutex);
+    sem_post(&rbt_queue_sem);
 
     return task;
 }
