@@ -3,7 +3,8 @@
 
 #include <unistd.h>
 
-CPU::CPU(){
+CPU::CPU()
+{
     //rbtree.init() ?
     pthread_mutex_init(&rbt_mutex, NULL);
 
@@ -30,7 +31,8 @@ CPU::CPU(){
 }
 
 
-void* CPU::tick_fair(void* arg){
+void* CPU::tick_fair(void* arg)
+{
     CPU *cpu = (CPU*) arg;
     while(true){
         usleep(500000);
@@ -40,7 +42,8 @@ void* CPU::tick_fair(void* arg){
     return(NULL);
 }
 
-void* CPU::tick_idle(void* arg){
+void* CPU::tick_idle(void* arg)
+{
     CPU *cpu = (CPU*) arg;
     while(true){
         usleep(500000);
@@ -50,7 +53,8 @@ void* CPU::tick_idle(void* arg){
     return(NULL);
 }
 
-void* CPU::pusher(void* arg){
+void* CPU::pusher(void* arg)
+{
     CPU *cpu = (CPU*) arg;
     while(true){
         sem_wait(&cpu->rbt_queue_sem);
@@ -66,14 +70,16 @@ void* CPU::pusher(void* arg){
 }
 
 
-void CPU::rbt_queue_push(TASK &task){
+void CPU::rbt_queue_push(TASK &task)
+{
     pthread_mutex_lock(&rbt_queue_mutex);
     rbt_queue.push(task);
     pthread_mutex_unlock(&rbt_queue_mutex);
 }
 
 // can be called only when rbt_queue.size()>0
-TASK CPU::rbt_queue_pop(){
+TASK CPU::rbt_queue_pop()
+{
     pthread_mutex_lock(&rbt_queue_mutex);
     TASK task = rbt_queue.front();
     rbt_queue.pop();
