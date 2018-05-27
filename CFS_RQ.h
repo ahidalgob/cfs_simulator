@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <set>
 #include "task.h"
+using namespace std;
 
 struct task_compare{
     bool operator() (const TASK& lhs, const TASK& rhs) const {

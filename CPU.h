@@ -7,7 +7,7 @@
 #include <semaphore.h>
 
 #include "task.h"
-// #include "rbtree.h" TODO
+#include "CFS_RQ.h"
 #include "waitqueue.h"
 
 using namespace std;
@@ -19,7 +19,7 @@ public:
 	//~CPU();
 
 private:
-	RBTREE cfs_rq;
+	CFS_RQ cfs_rq;
 
     TASK running;
 	vector <WAITQUEUE> idle_queue;

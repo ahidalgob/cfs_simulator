@@ -1,10 +1,11 @@
 #include "CPU.h"
 #include "waitqueue.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <unistd.h>
 
-#define time_delta 5000000
+#define time_delta 500000
 
 CPU::CPU()
 {
@@ -35,29 +36,33 @@ CPU::CPU()
 void* CPU::tick_fair(void* arg)
 {
     CPU *cpu = (CPU*) arg;
+    printf("fair start\n");
 
     while(true)
     {
         usleep(time_delta);
- 		int goto_io = rand()%100;
+        // TODO dormir si no hay tareas asignadas al cpu
+
+        printf("tick_fair\n");
+ 		int goto_io = rand()%400; //(la probabilidad queda entre 0 y 0.25)
 
 		if (goto_io <= cpu->running.io_prob)
 		{
 			cpu->idle_queue[rand()%WAITQUEUE_N].push(cpu->running);
             cpu->cfs_rq.lock();
 			cpu->running = cpu->cfs_rq.get_min();
-            cpu->cfs_rq.remove_min();
+            cpu->cfs_rq.erase_min();
             cpu->cfs_rq.unlock();
-
   		}
 
  		cpu->running.v_runtime += time_delta;
         cpu->cfs_rq.lock();
+        printf("%lld vs %lld\n",cpu->running.v_runtime, cpu->cfs_rq.get_min_v_runtime());
 		if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime())
 		{
 			cpu->rbt_queue_push(cpu->running);
     		sem_post(&(cpu->rbt_queue_sem));
-    		cpu->running = cpu->cfs_rq->rb_get_min();
+    		cpu->running = cpu->cfs_rq.get_min();
  		}
         cpu->cfs_rq.unlock();
 
@@ -67,10 +72,20 @@ void* CPU::tick_fair(void* arg)
 
 void* CPU::tick_idle(void* arg)
 {
+    printf("idle start\n");
     CPU *cpu = (CPU*) arg;
     while(true){
-        usleep(500000);
+        usleep(time_delta);
+        printf("tick_idle\n");
 
+        for(int i=0; i<WAITQUEUE_N; i++){
+            if(cpu->idle_queue[i].empty()) continue;
+            int out_prob = rand()%200;
+            if(out_prob <= cpu->idle_queue[i].idle_prob){
+                TASK tsk = cpu->idle_queue[i].pop();
+                cpu->rbt_queue_push(tsk);
+            }
+        }
 
     }
     return(NULL);
@@ -79,8 +94,11 @@ void* CPU::tick_idle(void* arg)
 void* CPU::pusher(void* arg)
 {
     CPU *cpu = (CPU*) arg;
+    printf("pusher start\n");
     while(true){
         sem_wait(&cpu->rbt_queue_sem);
+
+        printf("pusher pop push");
 
         TASK task = cpu->rbt_queue_pop();
 

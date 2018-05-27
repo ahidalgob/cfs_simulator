@@ -4,7 +4,6 @@
 #include <time.h>
 
 #include "waitqueue.h"
-#include "task.h"
 
 using namespace std;
 
@@ -36,4 +35,13 @@ TASK WAITQUEUE::pop(){
 	idle_queue.pop();
 	pthread_mutex_unlock(&idle_mutex);
 	return task;
+}
+
+bool WAITQUEUE::empty()
+{
+	pthread_mutex_lock(&idle_mutex);
+    bool ret = idle_queue.empty();
+	pthread_mutex_unlock(&idle_mutex);
+    return ret;
+
 }
