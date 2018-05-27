@@ -19,8 +19,7 @@ public:
 	//~CPU();
 
 private:
-	// RBTREE rbtree; TODO
-	pthread_mutex_t rbt_mutex;
+	RBTREE cfs_rq;
 
     TASK running;
 	vector <WAITQUEUE> idle_queue;

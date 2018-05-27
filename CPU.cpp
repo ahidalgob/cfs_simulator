@@ -1,12 +1,13 @@
 #include "CPU.h"
 #include "waitqueue.h"
+#include <stdlib.h>
 
 #include <unistd.h>
 
+#define time_delta 5000000
+
 CPU::CPU()
 {
-    //rbtree.init() ?
-    pthread_mutex_init(&rbt_mutex, NULL);
 
     idle_queue.resize(WAITQUEUE_N);
 
@@ -34,9 +35,31 @@ CPU::CPU()
 void* CPU::tick_fair(void* arg)
 {
     CPU *cpu = (CPU*) arg;
-    while(true){
-        usleep(500000);
 
+    while(true)
+    {
+        usleep(time_delta);
+ 		int goto_io = rand()%100;
+
+		if (goto_io <= cpu->running.io_prob)
+		{
+			cpu->idle_queue[rand()%WAITQUEUE_N].push(cpu->running);
+            cpu->cfs_rq.lock();
+			cpu->running = cpu->cfs_rq.get_min();
+            cpu->cfs_rq.remove_min();
+            cpu->cfs_rq.unlock();
+
+  		}
+
+ 		cpu->running.v_runtime += time_delta;
+        cpu->cfs_rq.lock();
+		if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime())
+		{
+			cpu->rbt_queue_push(cpu->running);
+    		sem_post(&(cpu->rbt_queue_sem));
+    		cpu->running = cpu->cfs_rq->rb_get_min();
+ 		}
+        cpu->cfs_rq.unlock();
 
     }
     return(NULL);
@@ -61,9 +84,9 @@ void* CPU::pusher(void* arg)
 
         TASK task = cpu->rbt_queue_pop();
 
-        pthread_mutex_lock(&cpu->rbt_mutex);
-        //cpu->rbtree.insert(task);
-        pthread_mutex_unlock(&cpu->rbt_mutex);
+        cpu->cfs_rq.lock();
+        cpu->cfs_rq.insert(task);
+        cpu->cfs_rq.unlock();
 
     }
     return(NULL);
@@ -75,9 +98,9 @@ void CPU::rbt_queue_push(TASK &task)
     pthread_mutex_lock(&rbt_queue_mutex);
     rbt_queue.push(task);
     pthread_mutex_unlock(&rbt_queue_mutex);
+    sem_post(&rbt_queue_sem);
 }
 
-// can be called only when rbt_queue.size()>0
 TASK CPU::rbt_queue_pop()
 {
     pthread_mutex_lock(&rbt_queue_mutex);
