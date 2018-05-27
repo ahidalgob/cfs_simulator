@@ -44,6 +44,7 @@ void* CPU::tick_fair(void* arg)
         // TODO dormir si no hay tareas asignadas al cpu
 
         printf("tick_fair\n");
+ 		cpu->running.v_runtime += time_delta;
  		int goto_io = rand()%400; //(la probabilidad queda entre 0 y 0.25)
 
 		if (goto_io <= cpu->running.io_prob)
@@ -55,13 +56,11 @@ void* CPU::tick_fair(void* arg)
             cpu->cfs_rq.unlock();
   		}
 
- 		cpu->running.v_runtime += time_delta;
         cpu->cfs_rq.lock();
-        printf("%lld vs %lld\n",cpu->running.v_runtime, cpu->cfs_rq.get_min_v_runtime());
+        //printf("%lld vs %lld\n",cpu->running.v_runtime, cpu->cfs_rq.get_min_v_runtime());
 		if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime())
 		{
 			cpu->rbt_queue_push(cpu->running);
-    		sem_post(&(cpu->rbt_queue_sem));
     		cpu->running = cpu->cfs_rq.get_min();
  		}
         cpu->cfs_rq.unlock();
@@ -75,8 +74,8 @@ void* CPU::tick_idle(void* arg)
     printf("idle start\n");
     CPU *cpu = (CPU*) arg;
     while(true){
+        printf("tick idle\n");
         usleep(time_delta);
-        printf("tick_idle\n");
 
         for(int i=0; i<WAITQUEUE_N; i++){
             if(cpu->idle_queue[i].empty()) continue;
@@ -84,6 +83,7 @@ void* CPU::tick_idle(void* arg)
             if(out_prob <= cpu->idle_queue[i].idle_prob){
                 TASK tsk = cpu->idle_queue[i].pop();
                 cpu->rbt_queue_push(tsk);
+                printf("iddle pop!\n");
             }
         }
 
@@ -98,8 +98,7 @@ void* CPU::pusher(void* arg)
     while(true){
         sem_wait(&cpu->rbt_queue_sem);
 
-        printf("pusher pop push");
-
+        printf("pusher pop push\n");
         TASK task = cpu->rbt_queue_pop();
 
         cpu->cfs_rq.lock();
