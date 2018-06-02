@@ -16,17 +16,22 @@ class CPU
 {
 public:
 	CPU();
-	//~CPU();
+
+	// PUSHER
+	void rbt_queue_push(TASK&);
+
+	
+	bool busy;
 
 private:
 	CFS_RQ cfs_rq;
 
-    TASK running;
+	TASK running;
 	vector <WAITQUEUE> idle_queue;
 
-    queue <TASK> rbt_queue;
+	queue <TASK> rbt_queue;
 	sem_t rbt_queue_sem;
-    pthread_mutex_t rbt_queue_mutex;
+	pthread_mutex_t rbt_queue_mutex;
 
 	// THREAD FUNCTIONS
 	static void* tick_fair(void*);
@@ -34,8 +39,8 @@ private:
 	static void* pusher(void*);
 
 	// PUSHER
-	void rbt_queue_push(TASK&);
 	TASK rbt_queue_pop();
+	bool rbt_queue_empty();
 };
 
 
