@@ -5,7 +5,7 @@
 
 #include <unistd.h>
 
-#define time_delta 5000000 //microsegundos
+#define time_delta 1000000 //microsegundos
 #define ioprob 25 // X% de probabilidad de i/o
 
 CPU::CPU(){
@@ -34,28 +34,26 @@ void* CPU::tick_fair(void* arg){
 	printf("[fair] start\n");
 
 	while(true){
-		if(!(cpu->busy)){	
+		if(!(cpu->busy)){
+			cpu->cfs_rq.lock();
 			if (cpu->cfs_rq.empty()) {
+				cpu->cfs_rq.unlock();
 				printf("[fair] cpu is idle\n");
 				usleep(time_delta);
 				continue;
 			}
-			cpu->cfs_rq.lock();
-			cpu->running = cpu->cfs_rq.get_min();
+			cpu->running = cpu->cfs_rq.pop_min();
 			cpu->cfs_rq.unlock();
-
-			printf("[fair] cpu is busy\n");
+			printf("[fair] cpu is now busy\n");
+			printf("[fair] task id %d has just entered the CPU with v_runtime %lld ms\n", cpu->running.id, cpu->running.v_runtime);
 			cpu->busy = 1;
 		}
-
-
-		
 		
 		usleep(time_delta);
 
-		cpu->running.v_runtime += time_delta;
+		cpu->running.v_runtime += time_delta/1000;
 
-		printf("[fair] process %d has been running for %lld useconds\n", cpu->running.id, cpu->running.v_runtime);
+		printf("[fair] task id %d has been running for %lld ms\n", cpu->running.id, cpu->running.v_runtime);
 		
 		/*
 		int goto_io = rand()%(10000/ioprob); //(la probabilidad queda entre 0 y 0.25)
@@ -71,12 +69,13 @@ void* CPU::tick_fair(void* arg){
 		*/
 
 		cpu->cfs_rq.lock();
-		
-		printf("[fair] CPU v_runtime: %lld, min_vruntime: %lld\n",cpu->running.v_runtime, cpu->cfs_rq.get_min_v_runtime());
-		
-		if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime()){
+		if (cpu->cfs_rq.empty()) {
+			printf("[fair] RBT is empty\n");
+		}
+		else if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime()){
 			cpu->rbt_queue_push(cpu->running);
-			cpu->running = cpu->cfs_rq.get_min();
+			cpu->running = cpu->cfs_rq.pop_min();
+			printf("[fair] task id %d has just entered the CPU with v_runtime %lld ms\n", cpu->running.id, cpu->running.v_runtime);
 		}
 		cpu->cfs_rq.unlock();
 	}
@@ -119,7 +118,7 @@ void* CPU::pusher(void* arg){
 			cpu->cfs_rq.insert(task);
 			cpu->cfs_rq.unlock();
 		}
-		printf("[pusher] task with id %d is in the RBT\n", task.id);
+		printf("[pusher] task with id %d and v_runtime %lld ms is in the RBT\n", task.id, task.v_runtime);
 	}
 	return(NULL);
 }
@@ -137,7 +136,6 @@ TASK CPU::rbt_queue_pop(){
 	TASK task = rbt_queue.front();
 	rbt_queue.pop();
 	pthread_mutex_unlock(&rbt_queue_mutex);
-
 	return task;
 }
 

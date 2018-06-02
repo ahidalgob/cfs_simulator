@@ -15,11 +15,12 @@ int main()
 	int ntask = 1;
 	CPU cpu;
 	while(ntask <= maxntask){
-		TASK task = *(new TASK());
-		task.id = ntask;
+		TASK *task = new TASK();
+		task->id = ntask;
 		ntask++;
-		printf("[main] sent task with id %d, nice=%d, io_prob=%d to pusher\n", task.id, task.nice, task.io_prob);
-		cpu.rbt_queue_push(task);
+		printf("[main] sent task with id %d, nice=%d, io_prob=%d to pusher\n", task->id, task->nice, task->io_prob);
+		cpu.rbt_queue_push(*task);
+		delete task;
 	}
 	while(1){};	
 
