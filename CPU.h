@@ -19,7 +19,7 @@ public:
 	// PUSHER
 	void rbt_queue_push(TASK&);
 
-	
+	int number;
 	bool busy;
 
 private:

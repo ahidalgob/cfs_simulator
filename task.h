@@ -10,7 +10,7 @@ class TASK
 		int nice;
 		int io_prob;
 		int id;
-		int cpu;
+		int last_cpu;
 };
 
 #endif

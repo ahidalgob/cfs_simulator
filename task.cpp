@@ -10,5 +10,5 @@ TASK::TASK() {
 	nice = (rand() % 40) - 20;
 	io_prob = rand() % 100;
 	id=-1;
-	cpu=-1;
+	last_cpu=-1;
 }

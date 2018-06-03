@@ -8,7 +8,7 @@
 #define time_delta 1000000 //microsegundos
 #define iofinished 25 // X% de probabilidad de terminar i/o
 #define WAITQUEUE_N 2
-#define CPU_N 2
+#define CPU_N 1
 
 
 BALANCER::BALANCER(){
@@ -16,18 +16,20 @@ BALANCER::BALANCER(){
 	int ncpu = 0;
 
 	while(nqueue < WAITQUEUE_N){
-		WAITQUEUE wq;
-		wq.idle_prob=rand()%100;
-		waitqueues.push_back(wq);
-		printf("[blcr] created idle queue number %d with idle_prob=%d\n", nqueue, wq.idle_prob);
+		WAITQUEUE *wq = new WAITQUEUE();
+		waitqueues.push_back(*wq);
+		printf("[blcr] created idle queue number %d with idle_prob=%d\n", nqueue, wq->idle_prob);
 		nqueue++;
+		delete wq;
 	}
 
 	while(ncpu < CPU_N){
-		CPU proc;
-		cpu.push_back(proc);
-		printf("[blcr] created CPU[%d]\n", ncpu);
+		printf("[blcr] creating CPU[%d]\n", ncpu);
+		CPU *proc = new CPU;
+		proc->number = ncpu;
+		cpu.push_back(*proc);
 		ncpu++;
+		delete proc;
 	}
 
 	pthread_t idle_thread;

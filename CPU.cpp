@@ -25,7 +25,8 @@ CPU::CPU(){
 
 void* CPU::tick_fair(void* arg){
 	CPU *cpu = (CPU*) arg;
-	printf("[fair] start\n");
+	
+	printf("[fair] [%d] start\n", cpu->number);
 
 	while(true){
 		if(!(cpu->busy)){
@@ -79,7 +80,7 @@ void* CPU::tick_fair(void* arg){
 void* CPU::pusher(void* arg){
 	CPU *cpu = (CPU*) arg;
 	TASK task;
-	printf("[pshr] start\n");
+	printf("[pshr] [%d] start\n", cpu->number);
 	while(1){
 		sem_wait(&cpu->rbt_queue_sem);
 		if(!cpu->rbt_queue_empty()){	

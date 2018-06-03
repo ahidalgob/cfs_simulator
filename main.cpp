@@ -5,6 +5,8 @@
 #include <time.h>
 
 #define maxntask 5	// Max number of tasks
+#define CPU_N 1
+
 
 using namespace std;
 
@@ -18,7 +20,7 @@ int main()
 		task->id = ntask;
 		ntask++;
 		printf("[main] sent id %03d, nice=%d to pusher[%d]\n", task->id, task->nice, ncpu);
-		balancer.cpu[0].rbt_queue_push(*task);
+		balancer.cpu[ntask%CPU_N].rbt_queue_push(*task);
 		delete task;
 	}
 	while(1){};	
