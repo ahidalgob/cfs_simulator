@@ -20,11 +20,14 @@ waitqueue.o: waitqueue.cpp waitqueue.h task.o
 CPU.o: CPU.cpp CPU.h CFS_RQ.o task.o waitqueue.o
 	$(CC) $(CFLAGS) -c CPU.cpp -o CPU.o
 
-CFS_RQ.o: CFS_RQ.cpp task.cpp
+CFS_RQ.o: CFS_RQ.cpp CFS_RQ.h task.o
 	$(CC) $(CFLAGS) -c CFS_RQ.cpp -o CFS_RQ.o
 
+balancer.o: balancer.cpp balancer.h task.o waitqueue.o
+	$(CC) $(CFLAGS) -c balancer.cpp -o balancer.o
+
 # Crear el ejecutable 'main'
-main: task.o waitqueue.o CPU.o
+main: task.o waitqueue.o CPU.o balancer.o
 	$(CC) $(CFLAGS) *.o main.cpp -o main
 
 # Eliminar todos los .o

@@ -1,4 +1,4 @@
-#include "idle.h"
+#include "balancer.h"
 #include "waitqueue.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,26 +7,42 @@
 
 #define time_delta 1000000 //microsegundos
 #define iofinished 25 // X% de probabilidad de terminar i/o
-#define WAITQUEUE_N 4 // Number of idle queues (i/o device types)
+#define WAITQUEUE_N 2
+#define CPU_N 2
 
-IDLE::IDLE(){
-	waitqueues.resize(WAITQUEUE_N);
+
+BALANCER::BALANCER(){
+	int nqueue = 0;
+	int ncpu = 0;
+
+	while(nqueue < WAITQUEUE_N){
+		WAITQUEUE wq;
+		wq.idle_prob=rand()%100;
+		waitqueues.push_back(wq);
+		printf("[blcr] created idle queue number %d with idle_prob=%d\n", nqueue, wq.idle_prob);
+		nqueue++;
+	}
+
+	while(ncpu < CPU_N){
+		CPU proc;
+		cpu.push_back(proc);
+		printf("[blcr] created CPU[%d]\n", ncpu);
+		ncpu++;
+	}
 
 	pthread_t idle_thread;
 	pthread_create(&idle_thread, NULL, (&tick_idle), (void*) this);
 	pthread_detach(idle_thread);
 }
 
-void push_to_idle(TASK &task){
+void BALANCER::push_to_idle(TASK &task){
 	int nqueue = rand()%WAITQUEUE_N;
-	pthread_mutex_lock(&idle_queue_mutex);
 	waitqueues[nqueue].push(task);
-	pthread_mutex_unlock(&idle_queue_mutex);
 }
 
-void* CPU::tick_idle(void* arg){
+void* BALANCER::tick_idle(void* arg){
 	/*
-	printf("idle start\n");
+	printf("[idle] start\n");
 	CPU *cpu = (CPU*) arg;
 	while(true){
 		printf("tick idle\n");

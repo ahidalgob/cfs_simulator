@@ -6,7 +6,6 @@
 
 #include "task.h"
 
-#define WAITQUEUE_N 4
 
 using namespace std;
 
