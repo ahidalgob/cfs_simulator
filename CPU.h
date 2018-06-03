@@ -7,8 +7,7 @@
 #include <semaphore.h>
 
 #include "task.h"
-// #include "rbtree.h" TODO
-#include "waitqueue.h"
+#include "CFS_RQ.h"
 
 using namespace std;
 
@@ -16,27 +15,35 @@ class CPU
 {
 public:
 	CPU();
-	//~CPU();
-
-private:
-	// RBTREE rbtree; TODO
-	pthread_mutex_t rbt_mutex;
-
-    TASK running;
-	vector <WAITQUEUE> idle_queue;
-
-    queue <TASK> rbt_queue;
-	sem_t rbt_queue_sem;
-    pthread_mutex_t rbt_queue_mutex;
-
-	// THREAD FUNCTIONS
-	static void* tick_fair(void*);
-	static void* tick_idle(void*);
-	static void* pusher(void*);
 
 	// PUSHER
 	void rbt_queue_push(TASK&);
+
+	int number;
+	bool busy;
+	pthread_mutex_t sync_mutex;
+
+
+private:
+	CFS_RQ cfs_rq;
+
+	TASK running;
+
+	queue <TASK> rbt_queue;
+	sem_t rbt_queue_sem;
+	pthread_mutex_t rbt_queue_mutex;
+
+
+
+	// THREAD FUNCTIONS
+	static void* tick_fair(void*);
+	static void* pusher(void*);
+
+	// PUSHER
 	TASK rbt_queue_pop();
+	bool rbt_queue_empty();
+	void rbt_queue_lock();
+	void rbt_queue_unlock();
 };
 
 

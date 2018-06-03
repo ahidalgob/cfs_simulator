@@ -1,7 +1,6 @@
 #ifndef TASK_H
 #define TASK_H
 
-using namespace std;
 
 class TASK
 {
@@ -11,7 +10,7 @@ class TASK
 		int nice;
 		int io_prob;
 		int id;
-		int cpu;
+		int last_cpu;
 };
 
 #endif

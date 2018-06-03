@@ -3,11 +3,12 @@
 
 #include "task.h"
 
-//using namespace std;
+using namespace std;
 
 TASK::TASK() {
-	srand (time(NULL));
 	v_runtime = 0;
 	nice = (rand() % 40) - 20;
 	io_prob = rand() % 100;
+	id=-1;
+	last_cpu=-1;
 }

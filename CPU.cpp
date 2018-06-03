@@ -1,112 +1,139 @@
 #include "CPU.h"
 #include "waitqueue.h"
+#include "console.h"
+
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <unistd.h>
 
-#define time_delta 5000000
+#define time_delta 1000000 //microsegundos
+#define ioprob 25 // X% de probabilidad de i/o
 
-CPU::CPU()
-{
-    //rbtree.init() ?
-    pthread_mutex_init(&rbt_mutex, NULL);
+CPU::CPU(){
+	sem_init(&rbt_queue_sem, 0, 0);
+	pthread_mutex_init(&rbt_queue_mutex, NULL);
+	pthread_mutex_init(&sync_mutex, NULL);
 
-    idle_queue.resize(WAITQUEUE_N);
+	pthread_t pusher_thread;
+	pthread_create(&pusher_thread, NULL, (&pusher), (void*) this);
+	pthread_detach(pusher_thread);
 
-    sem_init(&rbt_queue_sem, 0, 0);
-    pthread_mutex_init(&rbt_queue_mutex, NULL);
+	pthread_t fair_thread;
+	pthread_create(&fair_thread, NULL, (&tick_fair), (void*) this);
+	pthread_detach(fair_thread);
 
-
-    pthread_t fair_thread;
-    pthread_create(&fair_thread, NULL, (&tick_fair), (void*) this);
-
-    pthread_t idle_thread;
-    pthread_create(&idle_thread, NULL, (&tick_idle), (void*) this);
-
-    pthread_t pusher_thread;
-    pthread_create(&pusher_thread, NULL, (&pusher), (void*) this);
-
-    // wait for them
-    pthread_join(fair_thread, NULL);
-    pthread_join(idle_thread, NULL);
-    pthread_join(pusher_thread, NULL);
-
+	busy=0;
+	number=-1;
+	pthread_mutex_unlock(&sync_mutex);
 }
 
+void* CPU::tick_fair(void* arg){	
+	CPU *cpu = (CPU*) arg;
+	usleep(500);
+	printf("[fair] [%d] start\n", cpu->number);
 
-void* CPU::tick_fair(void* arg)
-{
-    CPU *cpu = (CPU*) arg;
-    int goto_io;
+	while(true){
+		if(!(cpu->busy)){
+			cpu->cfs_rq.lock();
+			if (cpu->cfs_rq.empty()) {
+				cpu->cfs_rq.unlock();
+				/*if (cpu->number == 0)
+				{
+					lcd_write_at(4, 0, "[%d] cpu is idle", cpu->number);
+				}
+				else
+					lcd_write_at(4, LINES, "[%d] cpu is idle", cpu->number);*/
 
-    while(true)
-    {
-        usleep(time_delta);
- 		/*goto_io = random()%100;
-
-		if (goto_io > this.runnig.ioprob)
-		{
-			waitqueue.push(runnig);
-       		pthread_mutex_lock(&this.rbt_mutex);   
-			runnig = cfs_rq->rb_left;
-		    pthread_mutex_unlock(&this.rbt_mutex);  
-  		}
+				printf("[fair] [%d] cpu is idle\n", cpu->number);
+				usleep(time_delta);
+				continue;
+			}
+			cpu->running = cpu->cfs_rq.pop_min();
+			cpu->cfs_rq.unlock();
+			printf("[fair] [%d] cpu is now busy\n", cpu->number);
+			printf("[fair] [%d] task id %d has just entered the CPU with v_runtime %lld ms\n", cpu->number, cpu->running.id, cpu->running.v_runtime);
+			cpu->busy = 1;
+		}
 		
-		pthread_mutex_lock(&this.rbt_mutex); 
+		usleep(time_delta);
 
-		if (this.running.vruntime > cfs_rq->rb_left.min_vruntime)
+		cpu->running.v_runtime += time_delta/1000;
+
+		printf("[fair] [%d] task id %d has been running for %lld ms\n", cpu->number, cpu->running.id, cpu->running.v_runtime);
+		
+		/*
+		int goto_io = rand()%(10000/ioprob); //(la probabilidad queda entre 0 y 0.25)
+
+		if (goto_io <= cpu->running.io_prob)
 		{
-			this.rbt_queue_push(this.running);
-    		sem_post(&rbt_queue_sem); 
-    		runnig = cfs_rq->rb_left;
-			pthread_mutex_unlock(&this.rbt_mutex);  
- 		}
- 		else
- 			this.running.vruntime += time_delta;*/
+			cpu->idle_queue[rand()%WAITQUEUE_N].push(cpu->running);
+			cpu->cfs_rq.lock();
+			cpu->running = cpu->cfs_rq.get_min();
+			cpu->cfs_rq.erase_min();
+			cpu->cfs_rq.unlock();
+		}
+		*/
 
-    }
-    return(NULL);
-}
-
-void* CPU::tick_idle(void* arg)
-{
-    CPU *cpu = (CPU*) arg;
-    while(true){
-        usleep(500000);
-
-
-    }
-    return(NULL);
+		cpu->cfs_rq.lock();
+		if (cpu->cfs_rq.empty()) {
+			printf("[fair] [%d] RBT is empty\n", cpu->number);
+		}
+		else if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime()){
+			cpu->rbt_queue_push(cpu->running);
+			cpu->running = cpu->cfs_rq.pop_min();
+			printf("[fair] [%d] task id %d has just entered the CPU with v_runtime %lld ms\n", cpu->number, cpu->running.id, cpu->running.v_runtime);
+		}
+		cpu->cfs_rq.unlock();
+	}
+	return(NULL);
 }
 
 void* CPU::pusher(void* arg){
-    CPU *cpu = (CPU*) arg;
-    while(true){
-        sem_wait(&cpu->rbt_queue_sem);
-
-        TASK task = cpu->rbt_queue_pop();
-
-        pthread_mutex_lock(&cpu->rbt_mutex);
-        //cpu->rbtree.insert(task);
-        pthread_mutex_unlock(&cpu->rbt_mutex);
-
-    }
-    return(NULL);
+	CPU *cpu = (CPU*) arg;
+	usleep(500);
+	TASK task;
+	printf("[pshr] [%d] start\n", cpu->number);
+	while(1){
+		sem_wait(&cpu->rbt_queue_sem);
+		cpu->rbt_queue_lock();
+		if(!cpu->rbt_queue_empty()){	
+			task = cpu->rbt_queue_pop();
+			cpu->rbt_queue_unlock();
+			cpu->cfs_rq.lock();
+			cpu->cfs_rq.insert(task);
+			cpu->cfs_rq.unlock();
+		}
+		else cpu->rbt_queue_unlock();
+		printf("[pshr] [%d] task with id %d and v_runtime %lld ms is in the RBT\n", cpu->number, task.id, task.v_runtime);
+	}
+	return(NULL);
 }
 
 
 void CPU::rbt_queue_push(TASK &task){
-    pthread_mutex_lock(&rbt_queue_mutex);
-    rbt_queue.push(task);
-    pthread_mutex_unlock(&rbt_queue_mutex);
+	pthread_mutex_lock(&rbt_queue_mutex);
+	rbt_queue.push(task);
+	pthread_mutex_unlock(&rbt_queue_mutex);
+	sem_post(&rbt_queue_sem);
 }
 
-// can be called only when rbt_queue.size()>0
 TASK CPU::rbt_queue_pop(){
-    pthread_mutex_lock(&rbt_queue_mutex);
-    TASK task = rbt_queue.front();
-    rbt_queue.pop();
-    pthread_mutex_unlock(&rbt_queue_mutex);
-
-    return task;
+	TASK task = rbt_queue.front();
+	rbt_queue.pop();
+	return task;
 }
 
+bool CPU::rbt_queue_empty(){
+	bool e;
+	e = rbt_queue.empty();
+	return e;
+}
+
+void CPU::rbt_queue_lock(){
+	pthread_mutex_lock(&rbt_queue_mutex);
+}
+
+void CPU::rbt_queue_unlock(){
+	pthread_mutex_unlock(&rbt_queue_mutex);
+}

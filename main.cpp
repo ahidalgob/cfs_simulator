@@ -1,16 +1,37 @@
-#include "task.h"
-#include "CPU.h"
-#include "waitqueue.h"
+#include "balancer.h"
+#include "console.h"
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+
+#define maxntask 5	// Max number of tasks
+#define CPU_N 2
+
 
 using namespace std;
 
 int main()
 {
-	TASK task;
-    printf("%d\n", task.nice);
+	srand (time(NULL));
+	int ntask = 1;
+	BALANCER balancer;
 
-    CPU cpu;
+	
+	while(ntask <= maxntask){
+		TASK *task = new TASK();
+		task->id = ntask;
+		ntask++;
+		printf("[main] sent id %03d, nice=%d to a random pusher\n", task->id, task->nice);
+		balancer.cpu[ntask%CPU_N].rbt_queue_push(*task);
+		delete task;
+	}
+	
+
+	while(1){};	
+
+	
 
 	return 0;
 }
