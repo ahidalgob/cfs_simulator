@@ -8,7 +8,6 @@
 
 #include "task.h"
 #include "CFS_RQ.h"
-#include "waitqueue.h"
 
 using namespace std;
 
@@ -27,7 +26,6 @@ private:
 	CFS_RQ cfs_rq;
 
 	TASK running;
-	vector <WAITQUEUE> idle_queue;
 
 	queue <TASK> rbt_queue;
 	sem_t rbt_queue_sem;
@@ -35,7 +33,6 @@ private:
 
 	// THREAD FUNCTIONS
 	static void* tick_fair(void*);
-	static void* tick_idle(void*);
 	static void* pusher(void*);
 
 	// PUSHER

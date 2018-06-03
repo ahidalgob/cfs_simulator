@@ -16,12 +16,12 @@ class WAITQUEUE
 	pthread_mutex_t idle_mutex;
 
 public:
-    WAITQUEUE();
-    void push(TASK&);
-    TASK pop();
-    bool empty();
-    int idle_prob;
-    //TASK front();
+	WAITQUEUE();
+	void push(TASK&);
+	TASK pop();
+	bool empty();
+	int idle_prob;
+	//TASK front();
 };
 
 #endif

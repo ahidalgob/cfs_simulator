@@ -25,7 +25,7 @@ public:
 	long long get_min_v_runtime();
 private:
 	pthread_mutex_t mutex;
-	set<TASK, task_compare> rb_tree;
+	multiset<TASK, task_compare> rb_tree;
 };
 
 

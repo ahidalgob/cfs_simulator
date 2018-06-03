@@ -9,18 +9,12 @@
 #define ioprob 25 // X% de probabilidad de i/o
 
 CPU::CPU(){
-	idle_queue.resize(WAITQUEUE_N);
-
 	sem_init(&rbt_queue_sem, 0, 0);
 	pthread_mutex_init(&rbt_queue_mutex, NULL);
 
 	pthread_t fair_thread;
 	pthread_create(&fair_thread, NULL, (&tick_fair), (void*) this);
 	pthread_detach(fair_thread);
-
-	pthread_t idle_thread;
-	pthread_create(&idle_thread, NULL, (&tick_idle), (void*) this);
-	pthread_detach(idle_thread);
 
 	pthread_t pusher_thread;
 	pthread_create(&pusher_thread, NULL, (&pusher), (void*) this);
@@ -82,43 +76,20 @@ void* CPU::tick_fair(void* arg){
 	return(NULL);
 }
 
-void* CPU::tick_idle(void* arg){
-	/*
-	printf("idle start\n");
-	CPU *cpu = (CPU*) arg;
-	while(true){
-		printf("tick idle\n");
-		usleep(time_delta);
-
-		for(int i=0; i<WAITQUEUE_N; i++){
-			if(cpu->idle_queue[i].empty()) continue;
-			int out_prob = rand()%200;
-			if(out_prob <= cpu->idle_queue[i].idle_prob){
-				TASK tsk = cpu->idle_queue[i].pop();
-				cpu->rbt_queue_push(tsk);
-				printf("iddle pop!\n");
-			}
-		}
-
-	}
-	*/
-	return(NULL);
-}
-
 void* CPU::pusher(void* arg){
 	CPU *cpu = (CPU*) arg;
 	TASK task;
-	printf("[pusher] start\n");
+	printf("[pshr] start\n");
 	while(1){
 		sem_wait(&cpu->rbt_queue_sem);
-
-		if(!cpu->rbt_queue_empty()){
+		if(!cpu->rbt_queue_empty()){	
 			task = cpu->rbt_queue_pop();
 			cpu->cfs_rq.lock();
 			cpu->cfs_rq.insert(task);
 			cpu->cfs_rq.unlock();
 		}
-		printf("[pusher] task with id %d and v_runtime %lld ms is in the RBT\n", task.id, task.v_runtime);
+		printf("[pshr] task with id %d and v_runtime %lld ms is in the RBT\n", task.id, task.v_runtime);
+
 	}
 	return(NULL);
 }
