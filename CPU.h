@@ -21,6 +21,8 @@ public:
 
 	int number;
 	bool busy;
+	pthread_mutex_t sync_mutex;
+
 
 private:
 	CFS_RQ cfs_rq;
@@ -31,6 +33,8 @@ private:
 	sem_t rbt_queue_sem;
 	pthread_mutex_t rbt_queue_mutex;
 
+
+
 	// THREAD FUNCTIONS
 	static void* tick_fair(void*);
 	static void* pusher(void*);
@@ -38,6 +42,8 @@ private:
 	// PUSHER
 	TASK rbt_queue_pop();
 	bool rbt_queue_empty();
+	void rbt_queue_lock();
+	void rbt_queue_unlock();
 };
 
 

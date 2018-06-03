@@ -2,13 +2,16 @@
 #define BALANCER_H
 
 #include <queue>
-#include <vector>
+#include <array>
 #include <pthread.h>
 
 #include "balancer.h"
 #include "task.h"
 #include "CPU.h"
 #include "waitqueue.h"
+
+#define WAITQUEUE_N 2
+#define CPU_N 2
 
 using namespace std;
 
@@ -17,11 +20,11 @@ class BALANCER
 public:
 	BALANCER();
 	void push_to_idle(TASK&);
-	vector <CPU> cpu;
+	CPU cpu[CPU_N];
 
 private:
-	vector <WAITQUEUE> waitqueues;
-	static void* tick_idle(void*);
+	WAITQUEUE wqs[WAITQUEUE_N];
+	static void* tick_idle();
 };
 
 #endif
