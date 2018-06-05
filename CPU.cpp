@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include <unistd.h>
+#include "balancer.h"
 
 CPU::CPU(void* balancer, long long int tick){
 	sem_init(&rbt_queue_sem, 0, 0);
@@ -32,12 +33,12 @@ void* CPU::tick_fair(void* arg){
 	printf("[fair] [%d] tick_fair OK\n", cpu->number);
 
 	while(true){
+		usleep(cpu->time_delta);
 		if(!(cpu->busy)){
 			cpu->cfs_rq.lock();
 			if (cpu->cfs_rq.empty()) {
 				cpu->cfs_rq.unlock();
 				printf("[fair] [%d] cpu is idle\n", cpu->number);
-				usleep(cpu->time_delta);
 				continue;
 			}
 			cpu->running = cpu->cfs_rq.pop_min();
@@ -47,7 +48,6 @@ void* CPU::tick_fair(void* arg){
 			cpu->busy = 1;
 		}
 
-		usleep(cpu->time_delta);
 
 		cpu->running.v_runtime += floor((cpu->time_delta/1000)*(pow(1.25, cpu->running.nice)));
 
@@ -58,7 +58,7 @@ void* CPU::tick_fair(void* arg){
 		if (goto_io <= cpu->running.io_prob){
 			printf("[fair] task id %03d has just exited the CPU[%d] to do i/o (v_runtime %lld ms)\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 
-			//PUSH TO IDLE QUEUES!!!! HOW TF?
+            ((BALANCER*)(cpu->idleq))->push_to_idle(cpu->running);
 
 			if (cpu->cfs_rq.empty()){
 				printf("[fair] RBT[%d] is empty\n", cpu->number);
@@ -69,11 +69,13 @@ void* CPU::tick_fair(void* arg){
 				printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 			}
 			cpu->cfs_rq.unlock();
+            continue;
 		}
 
 		cpu->cfs_rq.lock();
 		if (cpu->cfs_rq.empty()) {
-			printf("[fair] RBT[%d] is empty\n", cpu->number);
+			//printf("[fair] RBT[%d] is empty\n", cpu->number);
+            // No esta vacia, solo esta la que esta running.
 		}
 		else if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime()){
 			cpu->rbt_queue_push(cpu->running);

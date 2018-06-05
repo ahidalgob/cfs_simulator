@@ -38,7 +38,6 @@ private:
 	void* idleq;
 
 
-
 	// THREAD FUNCTIONS
 	static void* tick_fair(void*);
 	static void* pusher(void*);
