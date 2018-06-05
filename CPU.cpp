@@ -2,13 +2,11 @@
 #include "waitqueue.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <unistd.h>
 
-#define time_delta 1000000 //microsegundos
-#define ioprob 25 // X% de probabilidad de i/o
-
-CPU::CPU(){
+CPU::CPU(void* balancer, long long int tick){
 	sem_init(&rbt_queue_sem, 0, 0);
 	pthread_mutex_init(&rbt_queue_mutex, NULL);
 	pthread_mutex_init(&sync_mutex, NULL);
@@ -23,13 +21,15 @@ CPU::CPU(){
 
 	busy=0;
 	number=-1;
+	time_delta=tick;
+	idleq = balancer;
 	pthread_mutex_unlock(&sync_mutex);
 }
 
 void* CPU::tick_fair(void* arg){	
 	CPU *cpu = (CPU*) arg;
 	usleep(500);
-	printf("[fair] [%d] start\n", cpu->number);
+	printf("[fair] [%d] tick_fair OK\n", cpu->number);
 
 	while(true){
 		if(!(cpu->busy)){
@@ -37,43 +37,48 @@ void* CPU::tick_fair(void* arg){
 			if (cpu->cfs_rq.empty()) {
 				cpu->cfs_rq.unlock();
 				printf("[fair] [%d] cpu is idle\n", cpu->number);
-				usleep(time_delta);
+				usleep(cpu->time_delta);
 				continue;
 			}
 			cpu->running = cpu->cfs_rq.pop_min();
 			cpu->cfs_rq.unlock();
-			printf("[fair] [%d] cpu is now busy\n", cpu->number);
-			printf("[fair] [%d] task id %d has just entered the CPU with v_runtime %lld ms\n", cpu->number, cpu->running.id, cpu->running.v_runtime);
+			printf("[fair] CPU[%d] is now busy\n", cpu->number);
+			printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 			cpu->busy = 1;
 		}
 		
-		usleep(time_delta);
+		usleep(cpu->time_delta);
 
-		cpu->running.v_runtime += time_delta/1000;
+		cpu->running.v_runtime += floor((cpu->time_delta/1000)*(pow(1.25, cpu->running.nice)));
 
-		printf("[fair] [%d] task id %d has been running for %lld ms\n", cpu->number, cpu->running.id, cpu->running.v_runtime);
+		printf("[fair] task id %03d has been running in CPU[%d] for v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 		
-		/*
-		int goto_io = rand()%(10000/ioprob); //(la probabilidad queda entre 0 y 0.25)
+		int goto_io = rand()%200; //(la probabilidad queda entre 0 y 0.5)
+		
+		if (goto_io <= cpu->running.io_prob){
+			printf("[fair] task id %03d has just exited the CPU[%d] to do i/o (v_runtime %lld ms)\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 
-		if (goto_io <= cpu->running.io_prob)
-		{
-			cpu->idle_queue[rand()%WAITQUEUE_N].push(cpu->running);
-			cpu->cfs_rq.lock();
-			cpu->running = cpu->cfs_rq.get_min();
-			cpu->cfs_rq.erase_min();
+			//PUSH TO IDLE QUEUES!!!! HOW TF?
+
+			if (cpu->cfs_rq.empty()){
+				printf("[fair] RBT[%d] is empty\n", cpu->number);
+				cpu->busy = 0;
+			}
+			else{
+				cpu->running = cpu->cfs_rq.pop_min();
+				printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
+			}
 			cpu->cfs_rq.unlock();
 		}
-		*/
 
 		cpu->cfs_rq.lock();
 		if (cpu->cfs_rq.empty()) {
-			printf("[fair] [%d] RBT is empty\n", cpu->number);
+			printf("[fair] RBT[%d] is empty\n", cpu->number);
 		}
 		else if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime()){
 			cpu->rbt_queue_push(cpu->running);
 			cpu->running = cpu->cfs_rq.pop_min();
-			printf("[fair] [%d] task id %d has just entered the CPU with v_runtime %lld ms\n", cpu->number, cpu->running.id, cpu->running.v_runtime);
+			printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 		}
 		cpu->cfs_rq.unlock();
 	}
@@ -84,19 +89,22 @@ void* CPU::pusher(void* arg){
 	CPU *cpu = (CPU*) arg;
 	usleep(500);
 	TASK task;
-	printf("[pshr] [%d] start\n", cpu->number);
+	printf("[pshr] [%d] pusher OK\n", cpu->number);
 	while(1){
 		sem_wait(&cpu->rbt_queue_sem);
 		cpu->rbt_queue_lock();
 		if(!cpu->rbt_queue_empty()){	
 			task = cpu->rbt_queue_pop();
 			cpu->rbt_queue_unlock();
+
+			task.last_cpu = cpu->number;
+			
 			cpu->cfs_rq.lock();
 			cpu->cfs_rq.insert(task);
 			cpu->cfs_rq.unlock();
 		}
 		else cpu->rbt_queue_unlock();
-		printf("[pshr] [%d] task with id %d and v_runtime %lld ms is in the RBT\n", cpu->number, task.id, task.v_runtime);
+		printf("[pshr] task with id %d and v_runtime %lld ms is in RBT[%d]\n", task.id, task.v_runtime, cpu->number);
 	}
 	return(NULL);
 }

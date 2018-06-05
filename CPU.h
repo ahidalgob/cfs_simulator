@@ -14,7 +14,7 @@ using namespace std;
 class CPU
 {
 public:
-	CPU();
+	CPU(void*, long long int);
 
 	// PUSHER
 	void rbt_queue_push(TASK&);
@@ -32,6 +32,9 @@ private:
 	queue <TASK> rbt_queue;
 	sem_t rbt_queue_sem;
 	pthread_mutex_t rbt_queue_mutex;
+
+	long long int time_delta;
+	void* idleq;
 
 
 
