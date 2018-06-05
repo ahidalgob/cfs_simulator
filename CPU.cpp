@@ -26,7 +26,7 @@ CPU::CPU(void* balancer, long long int tick){
 	pthread_mutex_unlock(&sync_mutex);
 }
 
-void* CPU::tick_fair(void* arg){	
+void* CPU::tick_fair(void* arg){
 	CPU *cpu = (CPU*) arg;
 	usleep(500);
 	printf("[fair] [%d] tick_fair OK\n", cpu->number);
@@ -46,15 +46,15 @@ void* CPU::tick_fair(void* arg){
 			printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 			cpu->busy = 1;
 		}
-		
+
 		usleep(cpu->time_delta);
 
 		cpu->running.v_runtime += floor((cpu->time_delta/1000)*(pow(1.25, cpu->running.nice)));
 
 		printf("[fair] task id %03d has been running in CPU[%d] for v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
-		
+
 		int goto_io = rand()%200; //(la probabilidad queda entre 0 y 0.5)
-		
+
 		if (goto_io <= cpu->running.io_prob){
 			printf("[fair] task id %03d has just exited the CPU[%d] to do i/o (v_runtime %lld ms)\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 
@@ -93,12 +93,12 @@ void* CPU::pusher(void* arg){
 	while(1){
 		sem_wait(&cpu->rbt_queue_sem);
 		cpu->rbt_queue_lock();
-		if(!cpu->rbt_queue_empty()){	
+		if(!cpu->rbt_queue_empty()){
 			task = cpu->rbt_queue_pop();
 			cpu->rbt_queue_unlock();
 
 			task.last_cpu = cpu->number;
-			
+
 			cpu->cfs_rq.lock();
 			cpu->cfs_rq.insert(task);
 			cpu->cfs_rq.unlock();
@@ -135,4 +135,8 @@ void CPU::rbt_queue_lock(){
 
 void CPU::rbt_queue_unlock(){
 	pthread_mutex_unlock(&rbt_queue_mutex);
+}
+
+vector<TASK> CPU::task_list(){
+    return cfs_rq.rq_list();
 }

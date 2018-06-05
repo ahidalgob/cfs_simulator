@@ -23,6 +23,7 @@ public:
 	bool busy;
 	pthread_mutex_t sync_mutex;
 
+    vector<TASK> task_list();
 
 private:
 	CFS_RQ cfs_rq;

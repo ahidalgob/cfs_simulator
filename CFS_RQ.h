@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <set>
+#include <vector>
 #include "task.h"
 using namespace std;
 
@@ -23,6 +24,7 @@ public:
 	void insert(TASK);
 	TASK pop_min();
 	long long get_min_v_runtime();
+    vector<TASK> rq_list();
 private:
 	pthread_mutex_t mutex;
 	multiset<TASK, task_compare> rb_tree;

@@ -2,6 +2,8 @@
 #include "CFS_RQ.h"
 #include "limits.h"
 
+#include <algorithm>
+
 CFS_RQ::CFS_RQ()
 {
 	pthread_mutex_init(&mutex, NULL);
@@ -54,6 +56,16 @@ long long int CFS_RQ::get_min_v_runtime()
 		ret = rb_tree.begin()->v_runtime;
 	}
 	return ret;
+}
+
+vector<TASK> CFS_RQ::rq_list()
+{
+    vector<TASK> list;
+    for(multiset<TASK, task_compare>::iterator it=rb_tree.begin(); it!=rb_tree.end(); it++){
+        list.push_back(*it);
+    }
+    reverse(list.begin(), list.end());
+    return list;
 }
 
 
