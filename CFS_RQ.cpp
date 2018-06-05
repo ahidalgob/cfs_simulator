@@ -24,10 +24,14 @@ void CFS_RQ::unlock()
 
 bool CFS_RQ::empty()
 {
-	bool ret = rb_tree.empty();
-	return ret;
+	return rb_tree.empty();
 }
 
+
+int CFS_RQ::size()
+{
+	return rb_tree.size();
+}
 
 void CFS_RQ::insert(TASK tsk)
 {

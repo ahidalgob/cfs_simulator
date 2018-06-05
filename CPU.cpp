@@ -112,6 +112,11 @@ void* CPU::pusher(void* arg){
 }
 
 
+int CPU::size(){
+    if(!busy) return 0;
+    return cfs_rq.size()+1;
+}
+
 void CPU::rbt_queue_push(TASK &task){
 	pthread_mutex_lock(&rbt_queue_mutex);
 	rbt_queue.push(task);

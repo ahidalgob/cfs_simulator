@@ -19,6 +19,7 @@ public:
 	// PUSHER
 	void rbt_queue_push(TASK&);
 
+    int size();
 	int number;
 	bool busy;
 	pthread_mutex_t sync_mutex;

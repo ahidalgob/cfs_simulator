@@ -48,6 +48,14 @@ void* BALANCER::tick_idle(void* arg){
 			int out_prob = rand()%200;
 			if(out_prob <= balancer->wqs[i]->idle_prob){
 				TASK tsk = balancer->wqs[i]->pop();
+                int mn_sz = balancer->cpu[0]->size(), mn_id=0;
+                for(int j=1; j<(int)balancer->cpu.size(); j++){
+                    mn_sz = min(mn_sz, balancer->cpu[j]->size());
+                    mn_id = j;
+                }
+                if(mn_sz*10 <= balancer->cpu[tsk.last_cpu]->size()){
+                    tsk.last_cpu = mn_id;
+                }
 				balancer->cpu[tsk.last_cpu]->rbt_queue_push(tsk);
 				printf("[idle] Queue no. %d popped task %03d\n", i, tsk.id);
 			}

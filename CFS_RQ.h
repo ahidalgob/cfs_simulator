@@ -21,6 +21,7 @@ public:
 	void lock();
 	void unlock();
 	bool empty();
+    int size();
 	void insert(TASK);
 	TASK pop_min();
 	long long get_min_v_runtime();
