@@ -3,6 +3,8 @@
 
 #include <queue>
 #include <pthread.h>
+#include <set>
+#include <vector>
 
 #include "task.h"
 
@@ -19,7 +21,10 @@ public:
 	void push(TASK&);
 	TASK pop();
 	bool empty();
+	int size();
 	int idle_prob;
+	int get_id();
+	int get_last();
 	//TASK front();
 };
 

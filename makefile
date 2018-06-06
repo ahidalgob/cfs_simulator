@@ -26,9 +26,12 @@ CFS_RQ.o: CFS_RQ.cpp CFS_RQ.h task.o
 balancer.o: balancer.cpp balancer.h task.o waitqueue.o
 	$(CC) $(CFLAGS) -c balancer.cpp -o balancer.o
 
+console_safe.o: console_safe.cpp console.h
+	$(CC) -c console_safe.cpp -o console_safe.o -lncurses -lm
+
 # Crear el ejecutable 'main'
-main: task.o waitqueue.o CPU.o balancer.o
-	$(CC) $(CFLAGS) *.o main.cpp -o main
+main: task.o waitqueue.o CPU.o balancer.o console_safe.o
+	$(CC) $(CFLAGS) *.o main.cpp -o main -lncurses -lm
 
 # Eliminar todos los .o
 clean:

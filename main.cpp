@@ -5,7 +5,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define maxntask 5			// Numero inicial de tasks
+#define maxntask 20			// Numero inicial de tasks
 
 #define time_delta 1000000	// microsegundos
 
@@ -15,7 +15,7 @@
 
 #define WAITQUEUE_N 2		// Numero de colas de procesos bloqueados (i/o)
 
-#define CPU_N 1				// Cambiar el número de procesadores no
+#define CPU_N 4				// Cambiar el número de procesadores no
 							// se reflejará adecuadamente en la CLI
 
 using namespace std;
@@ -31,7 +31,7 @@ int main()
 		TASK *task = new TASK();
 		task->id = ntask;
 		ntask++;
-		printf("[main] sent id %03d, nice=%d to a random pusher\n", task->id, task->nice);
+		//printf("[main] sent id %03d, nice=%d to a random pusher\n", task->id, task->nice);
 		balancer.cpu[ntask%CPU_N]->rbt_queue_push(*task);
 		delete task;
 	}

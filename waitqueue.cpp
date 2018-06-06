@@ -8,7 +8,7 @@
 using namespace std;
 
 WAITQUEUE::WAITQUEUE() {
-	idle_prob = rand() % 100;
+	idle_prob = rand() % 80 + 20;
 	pthread_mutex_init(&idle_mutex, NULL);
 }
 
@@ -18,14 +18,11 @@ void WAITQUEUE::push(TASK &task){
 	pthread_mutex_unlock(&idle_mutex);
 	return;
 }
-/*
-TASK WAITQUEUE::front(){
-	TASK task;
-	pthread_mutex_lock(&idle_mutex);
-	task = idle_queue.front();
-	pthread_mutex_unlock(&idle_mutex);
-	return task;
-}*/
+
+int WAITQUEUE::size()
+{
+	return idle_queue.size();
+}
 
 TASK WAITQUEUE::pop(){
 	TASK task;
@@ -42,5 +39,26 @@ bool WAITQUEUE::empty()
     bool ret = idle_queue.empty();
 	pthread_mutex_unlock(&idle_mutex);
     return ret;
-
 }
+
+
+int WAITQUEUE::get_id()
+{
+	int ret=0;
+	if(!idle_queue.empty())
+	{
+		ret = idle_queue.front().id;
+	}
+	return ret;
+}
+
+int WAITQUEUE::get_last()
+{
+	int ret = -1;
+	if(!idle_queue.empty())
+	{
+		ret = idle_queue.front().last_cpu;
+	}
+	return ret;
+}
+

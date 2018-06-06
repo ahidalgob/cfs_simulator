@@ -25,6 +25,13 @@ public:
 	void insert(TASK);
 	TASK pop_min();
 	long long get_min_v_runtime();
+	int get_id();
+	int get_v_runtime();
+	int get_2v_runtime();
+	int get_2id();
+	int get_3id();
+	int get_3v_runtime();
+
     vector<TASK> rq_list();
 private:
 	pthread_mutex_t mutex;

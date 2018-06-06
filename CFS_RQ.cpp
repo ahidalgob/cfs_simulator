@@ -62,6 +62,65 @@ long long int CFS_RQ::get_min_v_runtime()
 	return ret;
 }
 
+int CFS_RQ::get_id()
+{
+	int ret=0;
+	if(!rb_tree.empty())
+	{
+		ret = rb_tree.begin()->id;
+	}
+	return ret;
+}
+
+int CFS_RQ::get_v_runtime()
+{
+	int ret=0;
+	if(!rb_tree.empty())
+	{
+		ret = rb_tree.begin()->v_runtime;
+	}
+	return ret;
+}
+
+int CFS_RQ::get_2id()
+{
+	int ret=0;
+	if(rb_tree.size()>1)
+	{
+		ret = (++rb_tree.begin())->id;
+	}
+	return ret;
+}
+
+int CFS_RQ::get_2v_runtime()
+{
+	int ret=0;
+	if(rb_tree.size()>1)
+	{
+		ret = (++rb_tree.begin())->v_runtime;
+	}
+	return ret;
+}
+
+int CFS_RQ::get_3id()
+{
+	int ret=0;
+	if(rb_tree.size()>2)
+	{
+		ret = (++(++rb_tree.begin()))->id;
+	}
+	return ret;
+}
+
+int CFS_RQ::get_3v_runtime()
+{
+	int ret=0;
+	if(rb_tree.size()>2)
+	{
+		ret = (++(++rb_tree.begin()))->v_runtime;
+	}
+	return ret;
+}
 vector<TASK> CFS_RQ::rq_list()
 {
     vector<TASK> list;
