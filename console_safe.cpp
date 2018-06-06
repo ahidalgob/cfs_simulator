@@ -48,30 +48,8 @@ void lcdshutdown()
     endwin();
 }
 
-//static WINDOW *led;
 static WINDOW *lcd;
 static WINDOW *screen;
-/*
-static bool ledstate[4] = {0,0,0,0};
-void drawled(int n, bool s)
-{
-    wmove(led, 0,8+n*6);
-    wcolor_set(led,n,NULL);
-    if ( s ) {
-        mvwaddch(led,0,8+n*6, ' '|A_REVERSE|A_STANDOUT);
-        ledstate[n] = 1;
-    }
-    else {
-        mvwaddch(led,0,8+n*6, ACS_BOARD|A_DIM);
-        ledstate[n] = 0;
-    }
-    wrefresh(led);
-}
-void drawleds()
-{
-    int n;
-    for(n=0 ; n<4 ; n++) drawled(n,0);
-}*/
 
 int console_init()
 {
@@ -84,9 +62,7 @@ int console_init()
     start_color();
     curs_set(0);
 
-
     atexit(lcdshutdown);
-    //led = newwin(1, 0, 0,0);
     lcd = newwin(0, 0, 1,0);
     screen = derwin(lcd,LINES-3,COLS-2,1,1);
     nodelay(screen,TRUE);
@@ -97,18 +73,10 @@ int console_init()
     mvwaddstr(lcd,0,LINES,"CPU 2");
     mvwaddstr(lcd,0,2*LINES,"CPU 3");
     mvwaddstr(lcd,0,3*LINES,"CPU 4");
-
-
-    
     wrefresh(lcd);
-    //wcolor_set(led,setcolor(7,8), NULL);
-    //wbkgdset(led, COLOR_PAIR(setcolor(7,8)));
-    //werase(led);
-    //mvwaddstr(led, 0,0 ," CPU         1                   ");
     init_pair(1, 9, 8);
     init_pair(2, 10, 8);
     init_pair(3, 12, 8);
-    //drawleds();
     keypad(screen, TRUE);	/* We get F1, F2 etc..            */
     wrefresh(screen);
     rc = sem_init(&sem, 0, 1);
@@ -129,7 +97,7 @@ int console_init()
         print_ready(i, 0, 0);
 
     for (int i = 0; i < 4; ++i)
-        print_ready2(i, 0, 0, 0);
+        print_ready2(i, 0, 0);
 
     for (int i = 0; i < 4; ++i)
         print_ready3(i, 0, 0, 0);
@@ -218,32 +186,15 @@ int  lcd_write_at(int row, int col, const char *fmt,...)
     return ret;
 }
 
-int is_pressed(int button)
-{
-    int ret;
-    int rc;
-
-    rc = sem_wait(&sem);
-    assert(rc == 0);
-    ret = wgetch(screen)==button;
-    rc = sem_post(&sem);
-    assert(rc == 0);
-    return ret;
-}
-
 void print_running(int cpu, int id, int nice, long long v_runtime)
 {
     if (cpu == 0)
     {
         if (id == 0)
-        {
             lcd_write_at(3, (LINES/4)-10, "       Idle");
-        }
-        
+               
         else
-        {
             lcd_write_at(3, (LINES/4)-10, "Runnig:      ");
-        }
 
         lcd_write_at(4, (LINES/4)-8, "Task ID: %03d   ", id);
         lcd_write_at(5, (LINES/4)-8, "Nice: %d    ", nice);
@@ -254,14 +205,11 @@ void print_running(int cpu, int id, int nice, long long v_runtime)
     if (cpu == 1 )
     {
         if (id == 0)
-        {
             lcd_write_at(3, LINES-10, "        Idle");
-        }
+        
         else
-        {
             lcd_write_at(3, LINES-10, "Runnig:      ");
-        }
-    
+        
         lcd_write_at(4, LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(5, LINES-8, "Nice: %d    ", nice);
         lcd_write_at(6, LINES-8, "V_Runtime:           ");
@@ -271,16 +219,11 @@ void print_running(int cpu, int id, int nice, long long v_runtime)
     if (cpu == 2)
     {
         if (id == 0)
-        {
             lcd_write_at(3, 2*LINES-10, "        Idle");
-
-        }
-                    
+ 
         else
-        {
             lcd_write_at(3, 2*LINES-10, "Runnig:      ");
-        }
-
+       
         lcd_write_at(4, 2*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(5, 2*LINES-8, "Nice: %d    ", nice);
         lcd_write_at(6, 2*LINES-8, "V_Runtime:           ");
@@ -290,15 +233,11 @@ void print_running(int cpu, int id, int nice, long long v_runtime)
     if (cpu == 3)
     {
         if (id == 0)
-        {
             lcd_write_at(3, 3*LINES-10, "        Idle");    
-        }
         
         else
-        {
             lcd_write_at(3, 3*LINES-10, "Runnig:      ");
-        }
-
+        
         lcd_write_at(4, 3*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(5, 3*LINES-8, "Nice: %d   ", nice);
         lcd_write_at(6, 3*LINES-8, "V_Runtime:           ");                    
@@ -311,15 +250,11 @@ void print_ready(int cpu, int id, long long v_runtime)
     if (cpu == 0)
     {
         if (id == 0)
-        {
             lcd_write_at(12, (LINES/4)-10, "       Empty");
-        }
-        
+                
         else
-        {
             lcd_write_at(12, (LINES/4)-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(13, (LINES/4)-8, "Task ID: %03d  ", id);
         lcd_write_at(14, (LINES/4)-8, "V_Runtime:           ");
         lcd_write_at(14, (LINES/4)-8, "V_Runtime: %lld", v_runtime);
@@ -328,13 +263,10 @@ void print_ready(int cpu, int id, long long v_runtime)
     if (cpu == 1 )
     {
         if (id == 0)
-        {
             lcd_write_at(12, LINES-10, "        Empty");
-        }
+        
         else
-        {
             lcd_write_at(12, LINES-10, "Ready:       ");
-        }
 
         lcd_write_at(13, LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(14, LINES-8, "V_Runtime:           ");
@@ -344,15 +276,11 @@ void print_ready(int cpu, int id, long long v_runtime)
     if (cpu == 2)
     {
         if (id == 0)
-        {
             lcd_write_at(12, 2*LINES-10, "        Empty");
-        }
-                    
+                            
         else
-        {
             lcd_write_at(12, 2*LINES-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(13, 2*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(14, 2*LINES-8, "V_Runtime:           ");
         lcd_write_at(14, 2*LINES-8, "V_Runtime: %lld     ", v_runtime);
@@ -361,96 +289,70 @@ void print_ready(int cpu, int id, long long v_runtime)
     if (cpu == 3)
     {
         if (id == 0)
-        {
-            lcd_write_at(12, 3*LINES-10, "        Empty");
-        
-        }
+            lcd_write_at(12, 3*LINES-10, "        Empty");     
         
         else
-        {
             lcd_write_at(12, 3*LINES-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(13, 3*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(14, 3*LINES-8, "V_Runtime:           ");                    
         lcd_write_at(14, 3*LINES-8, "V_Runtime: %lld", v_runtime);
     }
 }
 
-void print_ready2(int cpu, int id, long long v_runtime, int size)
+void print_ready2(int cpu, int id, long long v_runtime)
 {
     if (cpu == 0)
     {
         if (id == 0)
-        {
             lcd_write_at(16, (LINES/4)-10, "       Empty");
-        }
         
         else
-        {
             lcd_write_at(16, (LINES/4)-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(17, (LINES/4)-8, "Task ID: %03d  ", id);
         lcd_write_at(18, (LINES/4)-8, "V_Runtime:           ");
         lcd_write_at(18, (LINES/4)-8, "V_Runtime: %lld", v_runtime);
-        //lcd_write_at(20, (LINES/4)-8, "Total: %d   ", size);
-
     }
 
     if (cpu == 1 )
     {
         if (id == 0)
-        {
             lcd_write_at(16, LINES-10, "        Empty");
-        }
+        
         else
-        {
-            lcd_write_at(16, LINES-10, "Ready:       ");
-        }
+            lcd_write_at(16, LINES-10, "Ready:       ");        
 
         lcd_write_at(17, LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(18, LINES-8, "V_Runtime:           ");
         lcd_write_at(18, LINES-8, "V_Runtime: %lld", v_runtime);
-        //lcd_write_at(20, LINES-8, "Total: %d   ", size);
     }
 
     if (cpu == 2)
     {
         if (id == 0)
-        {
             lcd_write_at(16, 2*LINES-10, "        Empty");
-        }
                     
         else
-        {
-            lcd_write_at(16, 2*LINES-10, "Ready:       ");
-        }
+            lcd_write_at(16, 2*LINES-10, "Ready:       ");        
 
         lcd_write_at(17, 2*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(18, 2*LINES-8, "V_Runtime:           ");
         lcd_write_at(18, 2*LINES-8, "V_Runtime: %lld     ", v_runtime);
-        //lcd_write_at(20, 2*LINES-8, "Total: %d   ", size);
 
     }
     
     if (cpu == 3)
     {
         if (id == 0)
-        {
             lcd_write_at(16, 3*LINES-10, "        Empty");
-        
-        }
-        
+       
         else
-        {
             lcd_write_at(16, 3*LINES-10, "Ready:       ");
-        }
         
         lcd_write_at(17, 3*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(18, 3*LINES-8, "V_Runtime:           ");                    
         lcd_write_at(18, 3*LINES-8, "V_Runtime: %lld", v_runtime);
-        //lcd_write_at(20, 3*LINES-8, "Total: %d   ", size);
     }
 }
 
@@ -459,15 +361,11 @@ void print_ready3(int cpu, int id, long long v_runtime, int size)
     if (cpu == 0)
     {
         if (id == 0)
-        {
             lcd_write_at(20, (LINES/4)-10, "       Empty");
-        }
         
         else
-        {
             lcd_write_at(20, (LINES/4)-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(21, (LINES/4)-8, "Task ID: %03d  ", id);
         lcd_write_at(22, (LINES/4)-8, "V_Runtime:           ");
         lcd_write_at(22, (LINES/4)-8, "V_Runtime: %lld", v_runtime);
@@ -478,14 +376,10 @@ void print_ready3(int cpu, int id, long long v_runtime, int size)
     if (cpu == 1 )
     {
         if (id == 0)
-        {
             lcd_write_at(20, LINES-10, "        Empty");
-        }
         else
-        {
             lcd_write_at(20, LINES-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(21, LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(22, LINES-8, "V_Runtime:           ");
         lcd_write_at(22, LINES-8, "V_Runtime: %lld", v_runtime);
@@ -495,10 +389,8 @@ void print_ready3(int cpu, int id, long long v_runtime, int size)
     if (cpu == 2)
     {
         if (id == 0)
-        {
             lcd_write_at(20, 2*LINES-10, "        Empty");
-        }
-                    
+                 
         else
         {
             lcd_write_at(20, 2*LINES-10, "Ready:       ");
@@ -508,21 +400,15 @@ void print_ready3(int cpu, int id, long long v_runtime, int size)
         lcd_write_at(22, 2*LINES-8, "V_Runtime:           ");
         lcd_write_at(22, 2*LINES-8, "V_Runtime: %lld     ", v_runtime);
         lcd_write_at(24, 2*LINES-8, "Total: %d   ", size);
-
     }
     
     if (cpu == 3)
     {
         if (id == 0)
-        {
-            lcd_write_at(20, 3*LINES-10, "        Empty");
+            lcd_write_at(20, 3*LINES-10, "        Empty");        
         
-        }
-        
-        else
-        {
-            lcd_write_at(20, 3*LINES-10, "Ready:       ");
-        }
+        else        
+            lcd_write_at(20, 3*LINES-10, "Ready:       ");        
         
         lcd_write_at(21, 3*LINES-8, "Task ID: %03d   ", id);
         lcd_write_at(22, 3*LINES-8, "V_Runtime:           ");                    
@@ -537,15 +423,10 @@ void print_queues(int queue, int id, int size, int last)
     if (queue == 0)
     {
         if (id == 0)
-        {
             lcd_write_at(30, (LINES/4)-10, "       Empty");
-
-        }
         
         else
-        {
             lcd_write_at(30, (LINES/4)-10, "Ready:       ");
-        }
 
         lcd_write_at(31, (LINES/4)-8, "Front ID: %03d  ", id);
         lcd_write_at(32, (LINES/4)-8, "Last CPU: %d   ", last);
@@ -556,14 +437,11 @@ void print_queues(int queue, int id, int size, int last)
     if (queue == 1 )
     {
         if (id == 0)
-        {
-            lcd_write_at(30, LINES-10, "        Empty");
-        }
+            lcd_write_at(30, LINES-10, "       Empty");
+        
         else
-        {
             lcd_write_at(30, LINES-10, "Ready:       ");
-        }
-
+        
         lcd_write_at(31, LINES-8, "Front ID: %03d   ", id);
         lcd_write_at(32, LINES-8, "Last CPU: %d   ", last);
         lcd_write_at(33, LINES-8, "Total: %d   ", size);
@@ -572,14 +450,10 @@ void print_queues(int queue, int id, int size, int last)
     if (queue == 2)
     {
         if (id == 0)
-        {
-            lcd_write_at(30, 2*LINES-10, "        Empty");
-        }
+            lcd_write_at(30, 2*LINES-10, "       Empty");        
                     
         else
-        {
             lcd_write_at(30, 2*LINES-10, "Ready:       ");
-        }
 
         lcd_write_at(31, 2*LINES-8, "Front ID: %03d   ", id);
         lcd_write_at(32, 2*LINES-8, "Last CPU: %d   ", last);
@@ -590,15 +464,11 @@ void print_queues(int queue, int id, int size, int last)
     if (queue == 3)
     {
         if (id == 0)
-        {
-            lcd_write_at(30, 3*LINES-10, "        Empty");
-        }
+            lcd_write_at(30, 3*LINES-10, "       Empty");
         
         else
-        {
-            lcd_write_at(30, 2*LINES-10, "Ready:       ");
-        }
-
+            lcd_write_at(30, 3*LINES-10, "Ready:       ");
+        
         lcd_write_at(31, 3*LINES-8, "Front ID: %03d   ", id);
         lcd_write_at(32, 3*LINES-8, "Last CPU: %d   ", last);
         lcd_write_at(33, 3*LINES-8, "Total: %d   ", size);

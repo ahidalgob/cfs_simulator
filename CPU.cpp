@@ -9,7 +9,8 @@
 #include <unistd.h>
 #include "balancer.h"
 
-CPU::CPU(void* balancer, long long int tick){
+CPU::CPU(void* balancer, long long int tick)
+{
 	sem_init(&rbt_queue_sem, 0, 0);
 	pthread_mutex_init(&rbt_queue_mutex, NULL);
 	pthread_mutex_init(&sync_mutex, NULL);
@@ -29,63 +30,55 @@ CPU::CPU(void* balancer, long long int tick){
 	pthread_mutex_unlock(&sync_mutex);
 }
 
-void* CPU::tick_fair(void* arg){
+void* CPU::tick_fair(void* arg)
+{
 	CPU *cpu = (CPU*) arg;
 	usleep(500);
-	//printf("[fair] [%d] tick_fair OK\n", cpu->number);
 
-	while(true){
+	while(true)
+	{
 		usleep(cpu->time_delta);
 
-		if(!(cpu->busy)){
+		if(!(cpu->busy))
+		{
 			cpu->cfs_rq.lock();
-			if (cpu->cfs_rq.empty()) {
+			if (cpu->cfs_rq.empty()) 
+			{
 				cpu->cfs_rq.unlock();
 				print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-				print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+				print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 				print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
-				
-				//printf("[fair] [%d] cpu is idle\n", cpu->number);
 				continue;
 			}
 			cpu->running = cpu->cfs_rq.pop_min();
 			print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 			print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
 			cpu->cfs_rq.unlock();
-			//printf("[fair] CPU[%d] is now busy\n", cpu->number);
-			//printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 	    	print_running(cpu->number, cpu->running.id, cpu->running.nice, cpu->running.v_runtime);
 			cpu->busy = 1;
 		}
 
-
 		cpu->running.v_runtime += floor((cpu->time_delta/1000)*(pow(1.25, cpu->running.nice)));
-
-		//printf("[fair] task id %03d has been running in CPU[%d] for v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
     	print_running(cpu->number, cpu->running.id, cpu->running.nice, cpu->running.v_runtime);
 
 		int goto_io = rand()%200; //(la probabilidad queda entre 0 y 0.5)
 
-		if (goto_io <= cpu->running.io_prob){
-			//printf("[fair] task id %03d has just exited the CPU[%d] to do i/o (v_runtime %lld ms)\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
-
+		if (goto_io <= cpu->running.io_prob)
+		{
             ((BALANCER*)(cpu->idleq))->push_to_idle(cpu->running);
 
 			if (cpu->cfs_rq.empty()){
 				print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-				print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+				print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 				print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
-				//printf("[fair] RBT[%d] is empty\n", cpu->number);
 				cpu->busy = 0;
 			}
 			else{
 				cpu->running = cpu->cfs_rq.pop_min();
 				print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-				print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+				print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 				print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
-
-				//printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 		    	print_running(cpu->number, cpu->running.id, cpu->running.nice, cpu->running.v_runtime);
 			}
 			cpu->cfs_rq.unlock();
@@ -93,20 +86,18 @@ void* CPU::tick_fair(void* arg){
 		}
 
 		cpu->cfs_rq.lock();
-		if (cpu->cfs_rq.empty()) {
+		if (cpu->cfs_rq.empty()) 
+		{
 			print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 			print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
-			//printf("[fair] RBT[%d] is empty\n", cpu->number);
-            // No esta vacia, solo esta la que esta running.
 		}
 		else if (cpu->running.v_runtime > cpu->cfs_rq.get_min_v_runtime()){
 			cpu->rbt_queue_push(cpu->running);
 			cpu->running = cpu->cfs_rq.pop_min();
 			print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 			print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
-			//printf("[fair] task id %03d has just entered the CPU[%d] with v_runtime %lld ms\n", cpu->running.id, cpu->number, cpu->running.v_runtime);
 	    	print_running(cpu->number, cpu->running.id, cpu->running.nice, cpu->running.v_runtime);
 		}
 		cpu->cfs_rq.unlock();
@@ -118,8 +109,9 @@ void* CPU::pusher(void* arg){
 	CPU *cpu = (CPU*) arg;
 	usleep(500);
 	TASK task;
-	//printf("[pshr] [%d] pusher OK\n", cpu->number);
-	while(1){
+
+	while(1)
+	{
 		sem_wait(&cpu->rbt_queue_sem);
 		cpu->rbt_queue_lock();
 		if(!cpu->rbt_queue_empty())
@@ -132,16 +124,14 @@ void* CPU::pusher(void* arg){
 			cpu->cfs_rq.lock();
 			cpu->cfs_rq.insert(task);
 			print_ready3(cpu->number,cpu->cfs_rq.get_3id(), cpu->cfs_rq.get_3v_runtime(), cpu->cfs_rq.size());
-			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime(), cpu->cfs_rq.size());
+			print_ready2(cpu->number,cpu->cfs_rq.get_2id(), cpu->cfs_rq.get_2v_runtime());
 			print_ready(cpu->number,cpu->cfs_rq.get_id(), cpu->cfs_rq.get_v_runtime());
 			cpu->cfs_rq.unlock();
 		}
 		else cpu->rbt_queue_unlock();
-		//printf("[pshr] task with id %d and v_runtime %lld ms is in RBT[%d]\n", task.id, task.v_runtime, cpu->number);
 	}
 	return(NULL);
 }
-
 
 int CPU::size(){
     if(!busy) return 0;

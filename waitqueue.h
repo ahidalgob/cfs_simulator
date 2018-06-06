@@ -25,7 +25,6 @@ public:
 	int idle_prob;
 	int get_id();
 	int get_last();
-	//TASK front();
 };
 
 #endif
